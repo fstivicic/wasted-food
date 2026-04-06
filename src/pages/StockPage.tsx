@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Plus, Search, Package, Trash2, X, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react'
 import { cn, formatCurrency, getStockStatus } from '@/lib/utils'
+import { checkLowStockAlert, checkWasteSpikeAlert } from '@/lib/alerts'
 import type { Ingredient, WasteLog, WasteReason } from '@/types/database'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 
@@ -135,9 +136,15 @@ export default function StockPage() {
       logged_by: user.id,
     })
 
+    const newStock = Math.max(0, wasteTarget.current_stock - wasteQty)
     await supabase.from('ingredients').update({
-      current_stock: Math.max(0, wasteTarget.current_stock - wasteQty)
+      current_stock: newStock
     }).eq('id', wasteTarget.id)
+
+    // Check alerts
+    const updatedIng = { ...wasteTarget, current_stock: newStock }
+    await checkLowStockAlert(restaurant.id, updatedIng)
+    await checkWasteSpikeAlert(restaurant.id, updatedIng, wasteQty)
 
     setWasteSubmitting(false)
     setWasteTarget(null)

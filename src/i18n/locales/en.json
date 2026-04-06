@@ -123,19 +123,23 @@
     "edit": "Edit Dish",
     "name": "Dish Name",
     "menu_price": "Menu Price",
+    "selling_price": "Selling Price",
     "category": "Category",
     "ingredients": "Recipe Ingredients",
     "add_ingredient": "Add Ingredient",
     "qty_per_serving": "Qty / Serving",
     "cost": "Cost",
     "margin": "Margin",
-    "no_dishes": "No dishes yet. Add your first dish to see cost breakdowns."
+    "no_dishes": "No dishes yet. Add your first dish to see cost breakdowns.",
+    "empty": "No dishes yet. Add your first dish to see cost breakdowns."
   },
   "alerts": {
     "title": "Alerts",
     "mark_read": "Mark as Read",
     "mark_all_read": "Mark All Read",
     "no_alerts": "No alerts. You're in good shape!",
+    "no_unread": "No unread alerts.",
+    "empty": "No alerts yet.",
     "unread": "Unread",
     "all": "All",
     "types": {
@@ -149,13 +153,19 @@
     "title": "Consumption & Orders",
     "monthly_usage": "Monthly Usage",
     "suggested_orders": "Suggested Orders",
+    "suggested_order": "Suggested Order",
     "generate_order": "Generate Order List",
+    "generate": "Generate Period",
+    "new_period": "New Consumption Period",
+    "start": "Start Date",
+    "end": "End Date",
     "avg_daily": "Avg Daily",
     "total_purchased": "Purchased",
     "total_wasted": "Wasted",
     "total_consumed": "Consumed",
     "suggested_qty": "Suggested Qty",
-    "no_data": "Not enough data yet. Start scanning invoices and logging waste."
+    "no_data": "Not enough data yet. Start scanning invoices and logging waste.",
+    "empty": "No consumption periods yet. Generate one to see analysis."
   },
   "suppliers": {
     "title": "Suppliers",
@@ -169,8 +179,12 @@
   "settings": {
     "title": "Settings",
     "restaurant_info": "Restaurant Info",
+    "restaurant": "Restaurant",
+    "restaurant_name": "Restaurant Name",
+    "address": "Address",
     "team": "Team Members",
     "invite": "Invite Member",
+    "invite_email": "Email address",
     "language": "Language",
     "currency": "Currency",
     "role": "Role",

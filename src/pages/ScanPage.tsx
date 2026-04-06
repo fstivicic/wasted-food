@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Camera, Upload, Loader2, Check, X, ScanLine, Video, VideoOff } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
+import { checkPriceAlerts } from '@/lib/alerts'
 import type { Ingredient, Supplier, InvoiceStructuredData } from '@/types/database'
 import { createWorker } from 'tesseract.js'
 
@@ -246,6 +247,9 @@ export default function ScanPage() {
                 supplier_id: selectedSupplier || null,
                 recorded_at: new Date().toISOString(),
               })
+
+              // Check for price spike & margin erosion alerts
+              await checkPriceAlerts(restaurant.id, ingredientId, ing.name, item.unit_price, ing.last_cost)
             }
           }
         }

@@ -123,19 +123,23 @@
     "edit": "Uredi jelo",
     "name": "Naziv jela",
     "menu_price": "Cijena na meniju",
+    "selling_price": "Prodajna cijena",
     "category": "Kategorija",
     "ingredients": "Sastojci recepta",
     "add_ingredient": "Dodaj sastojak",
     "qty_per_serving": "Kol. / porcija",
     "cost": "Trošak",
     "margin": "Marža",
-    "no_dishes": "Nema jela. Dodajte prvo jelo za pregled troškova."
+    "no_dishes": "Nema jela. Dodajte prvo jelo za pregled troškova.",
+    "empty": "Nema jela. Dodajte prvo jelo za pregled troškova."
   },
   "alerts": {
     "title": "Upozorenja",
     "mark_read": "Označi pročitano",
     "mark_all_read": "Označi sve pročitano",
     "no_alerts": "Nema upozorenja. Sve je u redu!",
+    "no_unread": "Nema nepročitanih upozorenja.",
+    "empty": "Još nema upozorenja.",
     "unread": "Nepročitano",
     "all": "Sve",
     "types": {
@@ -149,13 +153,19 @@
     "title": "Potrošnja i narudžbe",
     "monthly_usage": "Mjesečna potrošnja",
     "suggested_orders": "Predložene narudžbe",
+    "suggested_order": "Predložena narudžba",
     "generate_order": "Generiraj listu narudžbe",
+    "generate": "Generiraj period",
+    "new_period": "Novi period potrošnje",
+    "start": "Početni datum",
+    "end": "Krajnji datum",
     "avg_daily": "Prosj. dnevno",
     "total_purchased": "Nabavljeno",
     "total_wasted": "Otpisano",
     "total_consumed": "Potrošeno",
     "suggested_qty": "Predložena kol.",
-    "no_data": "Nedovoljno podataka. Počnite skenirati račune i zapisivati otpis."
+    "no_data": "Nedovoljno podataka. Počnite skenirati račune i zapisivati otpis.",
+    "empty": "Još nema perioda potrošnje. Generirajte jedan za prikaz analize."
   },
   "suppliers": {
     "title": "Dobavljači",
@@ -169,8 +179,12 @@
   "settings": {
     "title": "Postavke",
     "restaurant_info": "Podaci o restoranu",
+    "restaurant": "Restoran",
+    "restaurant_name": "Naziv restorana",
+    "address": "Adresa",
     "team": "Članovi tima",
     "invite": "Pozovi člana",
+    "invite_email": "Email adresa",
     "language": "Jezik",
     "currency": "Valuta",
     "role": "Uloga",
