@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/contexts/AuthContext'
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Camera, Upload, Loader2, Check, X, ScanLine } from 'lucide-react'
+import { Camera, Upload, Loader2, Check, X, ScanLine, Video, VideoOff } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import type { Ingredient, Supplier, InvoiceStructuredData } from '@/types/database'
 import { createWorker } from 'tesseract.js'
@@ -21,11 +21,15 @@ export default function ScanPage() {
   const { t } = useTranslation()
   const { restaurant, user } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const streamRef = useRef<MediaStream | null>(null)
 
-  const [step, setStep] = useState<'capture' | 'ocr' | 'ai' | 'review'>('capture')
+  const [step, setStep] = useState<'capture' | 'camera' | 'ocr' | 'review'>('capture')
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [ocrText, setOcrText] = useState('')
+  const [ocrProgress, setOcrProgress] = useState(0)
   const [extractedItems, setExtractedItems] = useState<ExtractedItem[]>([])
   const [supplierName, setSupplierName] = useState('')
   const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split('T')[0])
@@ -35,6 +39,7 @@ export default function ScanPage() {
   const [selectedSupplier, setSelectedSupplier] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [cameraError, setCameraError] = useState<string | null>(null)
 
   const loadData = useCallback(async () => {
     if (!restaurant) return
@@ -46,33 +51,97 @@ export default function ScanPage() {
     setIngredients(ingRes.data || [])
   }, [restaurant])
 
-  async function handleFile(file: File) {
-    setError(null)
-    setImageFile(file)
-    setImageUrl(URL.createObjectURL(file))
-    await loadData()
+  useEffect(() => {
+    return () => { stopCamera() }
+  }, [])
 
-    // Step 1: OCR
-    setStep('ocr')
-    try {
-      const worker = await createWorker('hrv+eng')
-      const { data } = await worker.recognize(file)
-      setOcrText(data.text)
-      await worker.terminate()
-    } catch {
-      setError('OCR failed. Please try again with a clearer image.')
-      setStep('capture')
-      return
+  function stopCamera() {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop())
+      streamRef.current = null
     }
   }
 
-  // After OCR, trigger AI structuring
-  async function processWithAI() {
-    setStep('ai')
+  async function startCamera() {
+    setCameraError(null)
+    setError(null)
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
+      })
+      streamRef.current = stream
+      setStep('camera')
+      await loadData()
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream
+        }
+      }, 50)
+    } catch (err: any) {
+      const msg = err?.message || ''
+      if (msg.includes('Permission denied') || msg.includes('NotAllowedError')) {
+        setCameraError(t('scan.camera_denied'))
+      } else if (msg.includes('NotFoundError') || msg.includes('DevicesNotFoundError')) {
+        setCameraError(t('scan.no_camera'))
+      } else {
+        setCameraError(t('scan.camera_error'))
+      }
+    }
+  }
+
+  function captureFromCamera() {
+    if (!videoRef.current || !canvasRef.current) return
+    const video = videoRef.current
+    const canvas = canvasRef.current
+    canvas.width = video.videoWidth
+    canvas.height = video.videoHeight
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    ctx.drawImage(video, 0, 0)
+    stopCamera()
+
+    canvas.toBlob(async (blob) => {
+      if (!blob) return
+      const file = new File([blob], `invoice-${Date.now()}.jpg`, { type: 'image/jpeg' })
+      await processImage(file)
+    }, 'image/jpeg', 0.92)
+  }
+
+  async function handleFileUpload(file: File) {
+    await loadData()
+    await processImage(file)
+  }
+
+  async function processImage(file: File) {
+    setError(null)
+    setImageFile(file)
+    setImageUrl(URL.createObjectURL(file))
+    setStep('ocr')
+    setOcrProgress(0)
+
+    try {
+      const worker = await createWorker('hrv+eng', undefined, {
+        logger: (m: any) => {
+          if (m.progress) setOcrProgress(Math.round(m.progress * 100))
+        }
+      })
+      const { data } = await worker.recognize(file)
+      setOcrText(data.text)
+      await worker.terminate()
+
+      // auto-process with AI immediately
+      await structureWithAI(data.text)
+    } catch {
+      setError(t('scan.ocr_failed'))
+      setStep('capture')
+    }
+  }
+
+  async function structureWithAI(text: string) {
     setError(null)
     try {
       const { data, error: fnError } = await supabase.functions.invoke('process-invoice', {
-        body: { ocr_text: ocrText }
+        body: { ocr_text: text }
       })
       if (fnError) throw fnError
 
@@ -87,13 +156,11 @@ export default function ScanPage() {
         ingredient_id: findMatchingIngredient(item.product_name),
         create_new: false,
       })))
-      setStep('review')
     } catch {
-      // Fallback: parse OCR text manually
-      setError('AI structuring unavailable. You can manually add items.')
+      setError(t('scan.ai_unavailable'))
       setExtractedItems([{ product_name: '', quantity: 1, unit: 'kg', unit_price: 0, total: 0, ingredient_id: null, create_new: true }])
-      setStep('review')
     }
+    setStep('review')
   }
 
   function findMatchingIngredient(name: string): string | null {
@@ -107,7 +174,6 @@ export default function ScanPage() {
     setSubmitting(true)
 
     try {
-      // Upload image
       let uploadedUrl: string | null = null
       if (imageFile) {
         const path = `invoices/${restaurant.id}/${Date.now()}_${imageFile.name}`
@@ -118,7 +184,6 @@ export default function ScanPage() {
         }
       }
 
-      // Create invoice
       const { data: invoice, error: invError } = await supabase.from('invoices').insert({
         restaurant_id: restaurant.id,
         supplier_id: selectedSupplier || null,
@@ -134,11 +199,9 @@ export default function ScanPage() {
 
       if (invError) throw invError
 
-      // Create invoice items and update inventory
       for (const item of extractedItems) {
         let ingredientId = item.ingredient_id
 
-        // Create new ingredient if needed
         if (!ingredientId && item.create_new && item.product_name) {
           const { data: newIng } = await supabase.from('ingredients').insert({
             restaurant_id: restaurant.id,
@@ -153,7 +216,6 @@ export default function ScanPage() {
           ingredientId = newIng?.id || null
         }
 
-        // Create invoice item
         await supabase.from('invoice_items').insert({
           invoice_id: invoice.id,
           ingredient_id: ingredientId,
@@ -164,7 +226,6 @@ export default function ScanPage() {
           total: item.total,
         })
 
-        // Update ingredient stock
         if (ingredientId) {
           const { data: ing } = await supabase.from('ingredients').select('*').eq('id', ingredientId).single()
           if (ing) {
@@ -178,7 +239,6 @@ export default function ScanPage() {
               last_cost: item.unit_price,
             }).eq('id', ingredientId)
 
-            // Record price history
             if (item.unit_price !== ing.last_cost) {
               await supabase.from('price_history').insert({
                 ingredient_id: ingredientId,
@@ -191,13 +251,7 @@ export default function ScanPage() {
         }
       }
 
-      // Reset
-      setStep('capture')
-      setImageUrl(null)
-      setImageFile(null)
-      setOcrText('')
-      setExtractedItems([])
-      setError(null)
+      resetAll()
       alert(t('common.success'))
     } catch (err) {
       setError((err as Error).message)
@@ -218,6 +272,18 @@ export default function ScanPage() {
     setExtractedItems(items => [...items, { product_name: '', quantity: 1, unit: 'kg', unit_price: 0, total: 0, ingredient_id: null, create_new: true }])
   }
 
+  function resetAll() {
+    stopCamera()
+    setStep('capture')
+    setImageUrl(null)
+    setImageFile(null)
+    setOcrText('')
+    setOcrProgress(0)
+    setExtractedItems([])
+    setError(null)
+    setCameraError(null)
+  }
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-white">{t('scan.title')}</h1>
@@ -225,19 +291,26 @@ export default function ScanPage() {
       {error && (
         <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">{error}</div>
       )}
+      {cameraError && (
+        <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl text-yellow-400 text-sm">{cameraError}</div>
+      )}
+
+      <canvas ref={canvasRef} className="hidden" />
 
       {/* Step: Capture */}
       {step === 'capture' && (
-        <div className="flex flex-col items-center gap-4 py-12">
-          <ScanLine className="w-16 h-16 text-brand-400" />
-          <p className="text-slate-400 text-center max-w-sm">Take a photo of your supplier invoice or upload an image. AI will extract items, quantities, and prices.</p>
+        <div className="flex flex-col items-center gap-6 py-8">
+          <div className="w-20 h-20 rounded-2xl bg-brand-600/15 flex items-center justify-center">
+            <ScanLine className="w-10 h-10 text-brand-400" />
+          </div>
+          <p className="text-slate-400 text-center max-w-sm text-sm">{t('scan.description')}</p>
           <div className="flex gap-3">
             <button
-              onClick={() => fileInputRef.current?.click()}
+              onClick={startCamera}
               className="flex items-center gap-2 px-5 py-3 bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-xl transition-colors"
             >
               <Camera className="w-5 h-5" />
-              {t('scan.capture')}
+              {t('scan.open_camera')}
             </button>
             <button
               onClick={() => fileInputRef.current?.click()}
@@ -251,36 +324,48 @@ export default function ScanPage() {
             ref={fileInputRef}
             type="file"
             accept="image/*"
-            capture="environment"
             className="hidden"
-            onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])}
+            onChange={e => { if (e.target.files?.[0]) handleFileUpload(e.target.files[0]); e.target.value = '' }}
           />
         </div>
       )}
 
-      {/* Step: OCR Processing */}
-      {step === 'ocr' && (
-        <div className="flex flex-col items-center gap-4 py-12">
-          <Loader2 className="w-12 h-12 text-brand-400 animate-spin" />
-          <p className="text-slate-300 font-medium">{t('scan.ocr_running')}</p>
-          {imageUrl && <img src={imageUrl} alt="Invoice" className="max-w-xs rounded-xl border border-slate-700" />}
-          {ocrText && (
-            <div className="w-full max-w-lg">
-              <p className="text-xs text-slate-500 mb-1">Raw OCR text:</p>
-              <pre className="text-xs text-slate-400 bg-slate-900 p-3 rounded-xl max-h-40 overflow-y-auto whitespace-pre-wrap">{ocrText}</pre>
-              <button onClick={processWithAI} className="mt-3 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-xl transition-colors">
-                {t('scan.ai_running')}
-              </button>
+      {/* Step: Live Camera */}
+      {step === 'camera' && (
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative w-full max-w-lg rounded-xl overflow-hidden border border-slate-700 bg-black">
+            <video ref={videoRef} autoPlay playsInline muted className="w-full" />
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute inset-4 border-2 border-white/30 rounded-lg" />
+              <div className="absolute top-4 left-4 w-6 h-6 border-t-2 border-l-2 border-brand-400 rounded-tl" />
+              <div className="absolute top-4 right-4 w-6 h-6 border-t-2 border-r-2 border-brand-400 rounded-tr" />
+              <div className="absolute bottom-4 left-4 w-6 h-6 border-b-2 border-l-2 border-brand-400 rounded-bl" />
+              <div className="absolute bottom-4 right-4 w-6 h-6 border-b-2 border-r-2 border-brand-400 rounded-br" />
             </div>
-          )}
+          </div>
+          <div className="flex gap-3">
+            <button onClick={captureFromCamera} className="flex items-center gap-2 px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-xl transition-colors">
+              <Video className="w-5 h-5" />
+              {t('scan.take_photo')}
+            </button>
+            <button onClick={() => { stopCamera(); setStep('capture') }} className="flex items-center gap-2 px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium rounded-xl transition-colors">
+              <VideoOff className="w-5 h-5" />
+              {t('common.cancel')}
+            </button>
+          </div>
         </div>
       )}
 
-      {/* Step: AI Processing */}
-      {step === 'ai' && (
-        <div className="flex flex-col items-center gap-4 py-12">
+      {/* Step: OCR Processing (auto-proceeds to review) */}
+      {step === 'ocr' && (
+        <div className="flex flex-col items-center gap-4 py-8">
           <Loader2 className="w-12 h-12 text-brand-400 animate-spin" />
-          <p className="text-slate-300 font-medium">{t('scan.ai_running')}</p>
+          <p className="text-slate-300 font-medium">{t('scan.processing')}</p>
+          <div className="w-64 h-2 bg-slate-800 rounded-full overflow-hidden">
+            <div className="h-full bg-brand-500 rounded-full transition-all duration-300" style={{ width: `${ocrProgress}%` }} />
+          </div>
+          <p className="text-xs text-slate-500">{ocrProgress < 100 ? t('scan.ocr_running') : t('scan.ai_running')}</p>
+          {imageUrl && <img src={imageUrl} alt="Invoice" className="max-w-xs rounded-xl border border-slate-700 mt-2" />}
         </div>
       )}
 
@@ -289,76 +374,58 @@ export default function ScanPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-white">{t('scan.review')}</h2>
-            {confidence > 0 && (
-              <span className="text-xs text-slate-400">{t('scan.confidence')}: {(confidence * 100).toFixed(0)}%</span>
-            )}
-          </div>
-
-          {/* Supplier & Date */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <label className="block text-sm text-slate-400 mb-1">{t('scan.supplier')}</label>
-              <select value={selectedSupplier} onChange={e => setSelectedSupplier(e.target.value)} className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
-                <option value="">— {supplierName || 'Select'} —</option>
-                {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm text-slate-400 mb-1">{t('scan.invoice_date')}</label>
-              <input type="date" value={invoiceDate} onChange={e => setInvoiceDate(e.target.value)} className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-brand-500" />
+            <div className="flex items-center gap-2">
+              {confidence > 0 && (
+                <span className="text-xs text-slate-400">{t('scan.confidence')}: {(confidence * 100).toFixed(0)}%</span>
+              )}
+              <button onClick={resetAll} className="text-xs text-slate-500 hover:text-white">{t('scan.start_over')}</button>
             </div>
           </div>
 
-          {/* Items table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-800 text-slate-400">
-                  <th className="text-left py-2 px-2 font-medium">{t('scan.product')}</th>
-                  <th className="text-right py-2 px-2 font-medium">{t('scan.quantity')}</th>
-                  <th className="text-right py-2 px-2 font-medium">{t('scan.unit_price')}</th>
-                  <th className="text-right py-2 px-2 font-medium">{t('scan.total')}</th>
-                  <th className="text-left py-2 px-2 font-medium">{t('scan.match_ingredient')}</th>
-                  <th className="py-2 px-2"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {extractedItems.map((item, i) => (
-                  <tr key={i} className="border-b border-slate-800/50">
-                    <td className="py-2 px-2">
-                      <input type="text" value={item.product_name} onChange={e => updateItem(i, { product_name: e.target.value })} className="w-full px-2 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm" />
-                    </td>
-                    <td className="py-2 px-2">
-                      <input type="number" step="0.01" value={item.quantity} onChange={e => { const q = +e.target.value; updateItem(i, { quantity: q, total: q * item.unit_price }) }} className="w-20 px-2 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm text-right" />
-                    </td>
-                    <td className="py-2 px-2">
-                      <input type="number" step="0.01" value={item.unit_price} onChange={e => { const p = +e.target.value; updateItem(i, { unit_price: p, total: item.quantity * p }) }} className="w-24 px-2 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm text-right" />
-                    </td>
-                    <td className="py-2 px-2 text-right text-white">{formatCurrency(item.total)}</td>
-                    <td className="py-2 px-2">
-                      <select value={item.ingredient_id || '__new__'} onChange={e => updateItem(i, { ingredient_id: e.target.value === '__new__' ? null : e.target.value, create_new: e.target.value === '__new__' })} className="w-full px-2 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm">
-                        <option value="__new__">{t('scan.create_new')}</option>
-                        {ingredients.map(ing => <option key={ing.id} value={ing.id}>{ing.name}</option>)}
-                      </select>
-                    </td>
-                    <td className="py-2 px-2">
-                      <button onClick={() => removeItem(i)} className="text-red-400 hover:text-red-300"><X className="w-4 h-4" /></button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          {imageUrl && (
+            <div className="flex gap-4">
+              <img src={imageUrl} alt="Invoice" className="w-24 h-24 object-cover rounded-lg border border-slate-700 flex-shrink-0" />
+              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-slate-500 mb-1">{t('scan.supplier')}</label>
+                  <select value={selectedSupplier} onChange={e => setSelectedSupplier(e.target.value)} className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    <option value="">— {supplierName || 'Select'} —</option>
+                    {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-500 mb-1">{t('scan.invoice_date')}</label>
+                  <input type="date" value={invoiceDate} onChange={e => setInvoiceDate(e.target.value)} className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-2">
+            {extractedItems.map((item, i) => (
+              <div key={i} className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 flex items-center gap-2 flex-wrap">
+                <input type="text" value={item.product_name} onChange={e => updateItem(i, { product_name: e.target.value })} placeholder={t('scan.product')} className="flex-1 min-w-[140px] px-2 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm" />
+                <input type="number" step="0.01" value={item.quantity} onChange={e => { const q = +e.target.value; updateItem(i, { quantity: q, total: q * item.unit_price }) }} className="w-16 px-2 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm text-right" placeholder={t('scan.quantity')} />
+                <span className="text-xs text-slate-500">&times;</span>
+                <input type="number" step="0.01" value={item.unit_price} onChange={e => { const p = +e.target.value; updateItem(i, { unit_price: p, total: item.quantity * p }) }} className="w-20 px-2 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm text-right" placeholder={t('scan.unit_price')} />
+                <span className="text-xs text-slate-400 w-16 text-right">{formatCurrency(item.total)}</span>
+                <select value={item.ingredient_id || '__new__'} onChange={e => updateItem(i, { ingredient_id: e.target.value === '__new__' ? null : e.target.value, create_new: e.target.value === '__new__' })} className="w-32 px-2 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm">
+                  <option value="__new__">{t('scan.create_new')}</option>
+                  {ingredients.map(ing => <option key={ing.id} value={ing.id}>{ing.name}</option>)}
+                </select>
+                <button onClick={() => removeItem(i)} className="text-red-400 hover:text-red-300 p-1"><X className="w-4 h-4" /></button>
+              </div>
+            ))}
           </div>
 
-          <button onClick={addItem} className="text-sm text-brand-400 hover:text-brand-300">+ Add item</button>
+          <button onClick={addItem} className="text-sm text-brand-400 hover:text-brand-300">+ {t('scan.add_item')}</button>
 
-          {/* Totals & Actions */}
           <div className="flex items-center justify-between pt-4 border-t border-slate-800">
             <p className="text-sm text-slate-400">
               Total: <span className="text-white font-medium">{formatCurrency(extractedItems.reduce((s, i) => s + i.total, 0))}</span>
             </p>
             <div className="flex gap-3">
-              <button onClick={() => { setStep('capture'); setError(null) }} className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium rounded-xl transition-colors">
+              <button onClick={resetAll} className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium rounded-xl transition-colors">
                 {t('scan.reject')}
               </button>
               <button onClick={handleApprove} disabled={submitting || extractedItems.length === 0} className="flex items-center gap-2 px-5 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-xl transition-colors disabled:opacity-50">

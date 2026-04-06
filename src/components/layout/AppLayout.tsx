@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/contexts/AuthContext'
 import { useState } from 'react'
 import {
-  LayoutDashboard, ScanLine, Package, Trash2, UtensilsCrossed,
+  LayoutDashboard, ScanLine, Package, UtensilsCrossed,
   Bell, TrendingUp, Truck, Settings, LogOut, Menu, X
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -11,8 +11,7 @@ import { cn } from '@/lib/utils'
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'nav.dashboard' },
   { to: '/scan', icon: ScanLine, label: 'nav.scan' },
-  { to: '/inventory', icon: Package, label: 'nav.inventory' },
-  { to: '/waste', icon: Trash2, label: 'nav.waste' },
+  { to: '/stock', icon: Package, label: 'nav.stock' },
   { to: '/dishes', icon: UtensilsCrossed, label: 'nav.dishes' },
   { to: '/alerts', icon: Bell, label: 'nav.alerts' },
   { to: '/consumption', icon: TrendingUp, label: 'nav.consumption' },

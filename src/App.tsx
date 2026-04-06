@@ -5,8 +5,7 @@ import AuthPage from './pages/AuthPage'
 import CreateRestaurantPage from './pages/CreateRestaurantPage'
 import DashboardPage from './pages/DashboardPage'
 import ScanPage from './pages/ScanPage'
-import InventoryPage from './pages/InventoryPage'
-import WastePage from './pages/WastePage'
+import StockPage from './pages/StockPage'
 import DishesPage from './pages/DishesPage'
 import AlertsPage from './pages/AlertsPage'
 import ConsumptionPage from './pages/ConsumptionPage'
@@ -55,8 +54,7 @@ export default function App() {
         >
           <Route index element={<DashboardPage />} />
           <Route path="scan" element={<ScanPage />} />
-          <Route path="inventory" element={<InventoryPage />} />
-          <Route path="waste" element={<WastePage />} />
+          <Route path="stock" element={<StockPage />} />
           <Route path="dishes" element={<DishesPage />} />
           <Route path="alerts" element={<AlertsPage />} />
           <Route path="consumption" element={<ConsumptionPage />} />
