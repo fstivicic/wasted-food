@@ -81,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (isDemoMode) return
 
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
+    supabase.auth.getSession().then(({ data: { session: s } }: any) => {
       setSession(s)
       setUser(s?.user ?? null)
       if (s?.user) {
@@ -91,7 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, s: any) => {
       setSession(s)
       setUser(s?.user ?? null)
       if (s?.user) {

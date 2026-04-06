@@ -37,7 +37,7 @@ export default function DashboardPage() {
         const sellingPrice = (dish.selling_price as number) || 0
         return { ...dish, total_cost: totalCost, margin_percent: sellingPrice > 0 ? ((sellingPrice - totalCost) / sellingPrice) * 100 : 0 } as Dish
       })
-      setDishes(dishesWithCost.sort((a, b) => (b.margin_percent || 0) - (a.margin_percent || 0)))
+      setDishes(dishesWithCost.sort((a: any, b: any) => (b.margin_percent || 0) - (a.margin_percent || 0)))
       setLoading(false)
     })
   }, [restaurant])
