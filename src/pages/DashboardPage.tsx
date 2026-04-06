@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Link } from 'react-router-dom'
-import { ScanLine, Trash2, Package, TrendingUp, AlertTriangle } from 'lucide-react'
+import { ScanLine, Package, AlertTriangle, ArrowRight } from 'lucide-react'
 import { cn, formatCurrency, getStockStatus } from '@/lib/utils'
 import type { Ingredient, Alert, WasteLog, Dish } from '@/types/database'
 
@@ -28,7 +28,6 @@ export default function DashboardPage() {
       setAlerts(alertRes.data || [])
       setWasteLogs(wasteRes.data || [])
 
-      // Calculate margins for dishes
       const dishesWithCost = (dishRes.data || []).map((dish: Record<string, unknown>) => {
         const diArr = (dish.dish_ingredients || []) as Array<{ ingredient?: { avg_cost?: number }; quantity: number }>
         const totalCost = diArr.reduce((sum: number, di) => {
@@ -43,14 +42,21 @@ export default function DashboardPage() {
   }, [restaurant])
 
   if (loading) {
-    return <div className="flex items-center justify-center h-64"><p className="text-slate-400">{t('common.loading')}</p></div>
+    return (
+      <div className="space-y-6 stagger">
+        <div className="skeleton h-8 w-48" />
+        <div className="skeleton h-32 w-full rounded-xl" />
+        <div className="grid grid-cols-2 gap-4">
+          <div className="skeleton h-24 rounded-xl" />
+          <div className="skeleton h-24 rounded-xl" />
+        </div>
+      </div>
+    )
   }
 
-  const stockCounts = {
-    ok: ingredients.filter(i => getStockStatus(i.current_stock, i.par_level) === 'ok').length,
-    low: ingredients.filter(i => getStockStatus(i.current_stock, i.par_level) === 'low').length,
-    critical: ingredients.filter(i => getStockStatus(i.current_stock, i.par_level) === 'critical').length,
-  }
+  const criticalItems = ingredients.filter(i => getStockStatus(i.current_stock, i.par_level) === 'critical')
+  const lowItems = ingredients.filter(i => getStockStatus(i.current_stock, i.par_level) === 'low')
+  const needsAttention = criticalItems.length + lowItems.length + alerts.length
 
   const weeklyWasteCost = wasteLogs.reduce((sum, w) => {
     const wAny = w as WasteLog & { ingredient?: { avg_cost?: number } }
@@ -58,94 +64,148 @@ export default function DashboardPage() {
   }, 0)
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-white">{t('dashboard.title')}</h1>
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Link to="/scan" className="flex flex-col items-center gap-2 p-4 bg-brand-600/10 border border-brand-600/20 rounded-2xl hover:bg-brand-600/20 transition-colors">
-          <ScanLine className="w-6 h-6 text-brand-400" />
-          <span className="text-sm font-medium text-brand-300">{t('nav.scan')}</span>
-        </Link>
-        <Link to="/waste" className="flex flex-col items-center gap-2 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl hover:bg-red-500/20 transition-colors">
-          <Trash2 className="w-6 h-6 text-red-400" />
-          <span className="text-sm font-medium text-red-300">{t('nav.waste')}</span>
-        </Link>
-        <Link to="/inventory" className="flex flex-col items-center gap-2 p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl hover:bg-blue-500/20 transition-colors">
-          <Package className="w-6 h-6 text-blue-400" />
-          <span className="text-sm font-medium text-blue-300">{t('nav.inventory')}</span>
-        </Link>
-        <Link to="/consumption" className="flex flex-col items-center gap-2 p-4 bg-purple-500/10 border border-purple-500/20 rounded-2xl hover:bg-purple-500/20 transition-colors">
-          <TrendingUp className="w-6 h-6 text-purple-400" />
-          <span className="text-sm font-medium text-purple-300">{t('nav.consumption')}</span>
-        </Link>
+    <div className="space-y-8 animate-in">
+      {/* Greeting — serif display font, warm */}
+      <div>
+        <h1 className="text-3xl font-bold text-sand-900 tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
+          {t('dashboard.title')}
+        </h1>
+        <p className="text-sand-500 mt-1 text-[15px]">{restaurant?.name}</p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {/* Inventory Health */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-          <h3 className="text-sm font-medium text-slate-400 mb-3">{t('dashboard.inventory_health')}</h3>
-          <div className="flex items-center gap-4">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-green-400">{stockCounts.ok}</p>
-              <p className="text-xs text-slate-500">{t('dashboard.items_ok')}</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-yellow-400">{stockCounts.low}</p>
-              <p className="text-xs text-slate-500">{t('dashboard.items_low')}</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-red-400">{stockCounts.critical}</p>
-              <p className="text-xs text-slate-500">{t('dashboard.items_critical')}</p>
+      {/* Attention banner — only when something needs action */}
+      {needsAttention > 0 && (
+        <Link
+          to="/stock"
+          className="flex items-center gap-4 p-4 bg-brand-50 border-l-4 border-brand-500 rounded-lg hover:bg-brand-100 transition-colors group"
+        >
+          <AlertTriangle className="w-5 h-5 text-brand-600 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-[15px] font-semibold text-sand-900">
+              {criticalItems.length > 0 && `${criticalItems.length} critical`}
+              {criticalItems.length > 0 && lowItems.length > 0 && ', '}
+              {lowItems.length > 0 && `${lowItems.length} low stock`}
+              {(criticalItems.length > 0 || lowItems.length > 0) && alerts.length > 0 && ' · '}
+              {alerts.length > 0 && `${alerts.length} ${t('dashboard.recent_alerts').toLowerCase()}`}
+            </p>
+            <p className="text-sm text-sand-600">Tap to review your stock</p>
+          </div>
+          <ArrowRight className="w-4 h-4 text-sand-400 group-hover:text-brand-600 transition-colors shrink-0" />
+        </Link>
+      )}
+
+      {/* Two-column asymmetric layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        {/* Left — primary metrics (3 cols) */}
+        <div className="lg:col-span-3 space-y-5">
+          {/* Stock health — inline, not card */}
+          <div>
+            <h2 className="text-xs font-semibold text-sand-500 uppercase tracking-wider mb-3">{t('dashboard.inventory_health')}</h2>
+            <div className="flex gap-6">
+              <div>
+                <p className="text-3xl font-bold text-ok tabular-nums">{ingredients.filter(i => getStockStatus(i.current_stock, i.par_level) === 'ok').length}</p>
+                <p className="text-sm text-sand-500">{t('dashboard.items_ok')}</p>
+              </div>
+              <div>
+                <p className="text-3xl font-bold text-warn tabular-nums">{lowItems.length}</p>
+                <p className="text-sm text-sand-500">{t('dashboard.items_low')}</p>
+              </div>
+              <div>
+                <p className="text-3xl font-bold text-danger tabular-nums">{criticalItems.length}</p>
+                <p className="text-sm text-sand-500">{t('dashboard.items_critical')}</p>
+              </div>
+              <div className="ml-auto text-right">
+                <p className="text-3xl font-bold text-danger tabular-nums">{formatCurrency(weeklyWasteCost)}</p>
+                <p className="text-sm text-sand-500">{t('dashboard.waste_this_week')}</p>
+              </div>
             </div>
           </div>
+
+          {/* Critical items inline list */}
+          {criticalItems.length > 0 && (
+            <div>
+              <h2 className="text-xs font-semibold text-sand-500 uppercase tracking-wider mb-2">Needs restock</h2>
+              <div className="space-y-1">
+                {criticalItems.slice(0, 6).map(item => (
+                  <div key={item.id} className="flex items-center justify-between py-2 border-b border-sand-100 last:border-0">
+                    <span className="text-[15px] font-medium text-sand-800">{item.name}</span>
+                    <span className="text-sm text-danger font-semibold tabular-nums">{item.current_stock} / {item.par_level} {item.unit}</span>
+                  </div>
+                ))}
+              </div>
+              {criticalItems.length > 6 && (
+                <Link to="/stock" className="text-sm text-brand-600 font-medium hover:text-brand-700 mt-2 inline-block">
+                  View all {criticalItems.length} items &rarr;
+                </Link>
+              )}
+            </div>
+          )}
+
+          {/* Top dishes */}
+          {dishes.length > 0 && (
+            <div>
+              <h2 className="text-xs font-semibold text-sand-500 uppercase tracking-wider mb-3">{t('dashboard.top_dishes')}</h2>
+              <div className="space-y-1.5">
+                {dishes.slice(0, 5).map((dish, i) => (
+                  <div key={dish.id} className="flex items-center gap-3 py-2 border-b border-sand-100 last:border-0">
+                    <span className="text-sm text-sand-400 font-medium w-5">{i + 1}.</span>
+                    <span className="text-[15px] text-sand-800 flex-1">{dish.name}</span>
+                    <span className={cn('text-sm font-semibold tabular-nums',
+                      (dish.margin_percent || 0) >= 70 ? 'text-ok' :
+                      (dish.margin_percent || 0) >= 60 ? 'text-warn' : 'text-danger'
+                    )}>
+                      {(dish.margin_percent || 0).toFixed(0)}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Waste This Week */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-          <h3 className="text-sm font-medium text-slate-400 mb-3">{t('dashboard.waste_this_week')}</h3>
-          <p className="text-2xl font-bold text-red-400">{formatCurrency(weeklyWasteCost)}</p>
-          <p className="text-xs text-slate-500 mt-1">{wasteLogs.length} entries</p>
-        </div>
+        {/* Right — quick actions + alerts (2 cols) */}
+        <div className="lg:col-span-2 space-y-5">
+          {/* Quick scan CTA */}
+          <Link
+            to="/scan"
+            className="flex items-center gap-3 p-4 bg-brand-500 text-white rounded-xl hover:bg-brand-600 transition-colors shadow-sm group"
+          >
+            <ScanLine className="w-6 h-6 shrink-0" />
+            <div className="flex-1">
+              <p className="font-semibold">{t('nav.scan')}</p>
+              <p className="text-brand-100 text-sm">Camera or upload</p>
+            </div>
+            <ArrowRight className="w-4 h-4 opacity-60 group-hover:opacity-100 transition-opacity" />
+          </Link>
 
-        {/* Alerts */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-          <h3 className="text-sm font-medium text-slate-400 mb-3">{t('dashboard.recent_alerts')}</h3>
-          {alerts.length === 0 ? (
-            <p className="text-sm text-slate-500">{t('alerts.no_alerts')}</p>
-          ) : (
-            <div className="space-y-2">
-              {alerts.slice(0, 3).map(a => (
-                <div key={a.id} className="flex items-start gap-2">
-                  <AlertTriangle className="w-4 h-4 text-yellow-400 mt-0.5 shrink-0" />
-                  <p className="text-sm text-slate-300 line-clamp-1">{a.message}</p>
-                </div>
-              ))}
+          <Link
+            to="/stock"
+            className="flex items-center gap-3 p-4 bg-white border border-sand-200 text-sand-800 rounded-xl hover:border-sand-300 hover:shadow-sm transition-all group"
+          >
+            <Package className="w-6 h-6 text-sand-500 shrink-0" />
+            <div className="flex-1">
+              <p className="font-semibold">{t('nav.stock')}</p>
+              <p className="text-sand-500 text-sm">{ingredients.length} items</p>
+            </div>
+            <ArrowRight className="w-4 h-4 text-sand-400 opacity-60 group-hover:opacity-100 transition-opacity" />
+          </Link>
+
+          {/* Alerts */}
+          {alerts.length > 0 && (
+            <div>
+              <h2 className="text-xs font-semibold text-sand-500 uppercase tracking-wider mb-3">{t('dashboard.recent_alerts')}</h2>
+              <div className="space-y-2">
+                {alerts.slice(0, 4).map(a => (
+                  <div key={a.id} className="flex items-start gap-2.5 py-2">
+                    <AlertTriangle className="w-4 h-4 text-warn mt-0.5 shrink-0" />
+                    <p className="text-sm text-sand-700 leading-snug">{a.message}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
       </div>
-
-      {/* Top Dishes by Margin */}
-      {dishes.length > 0 && (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-          <h3 className="text-sm font-medium text-slate-400 mb-3">{t('dashboard.top_dishes')}</h3>
-          <div className="space-y-2">
-            {dishes.slice(0, 5).map(dish => (
-              <div key={dish.id} className="flex items-center justify-between">
-                <span className="text-sm text-slate-200">{dish.name}</span>
-                <span className={cn('text-sm font-medium',
-                  (dish.margin_percent || 0) >= 70 ? 'text-green-400' :
-                  (dish.margin_percent || 0) >= 60 ? 'text-yellow-400' : 'text-red-400'
-                )}>
-                  {(dish.margin_percent || 0).toFixed(1)}%
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   )
 }

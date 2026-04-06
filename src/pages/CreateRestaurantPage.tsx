@@ -20,17 +20,17 @@ export default function CreateRestaurantPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-sand-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-md animate-in">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-white mb-2">{t('auth.create_restaurant')}</h1>
-          <p className="text-slate-400 text-sm">Set up your restaurant to get started</p>
+          <h1 className="text-2xl font-bold text-sand-900 mb-2" style={{ fontFamily: 'var(--font-display)' }}>{t('auth.create_restaurant')}</h1>
+          <p className="text-sand-500 text-sm">Set up your restaurant to get started</p>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+        <div className="bg-white border border-sand-200 rounded-xl p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">
+              <label className="block text-sm font-medium text-sand-700 mb-1.5">
                 {t('auth.restaurant_name')}
               </label>
               <input
@@ -38,13 +38,13 @@ export default function CreateRestaurantPage() {
                 value={name}
                 onChange={e => setName(e.target.value)}
                 required
-                className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                className="w-full px-3 py-2.5 bg-sand-50 border border-sand-300 rounded-lg text-sand-900 placeholder-sand-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                 placeholder="My Restaurant"
               />
             </div>
 
             {error && (
-              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">
+              <div className="p-3 bg-red-50 border border-danger/20 rounded-lg text-danger text-sm">
                 {error}
               </div>
             )}
@@ -52,7 +52,7 @@ export default function CreateRestaurantPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-xl transition-colors disabled:opacity-50"
+              className="w-full py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-medium rounded-xl transition-colors disabled:opacity-50"
             >
               {loading ? t('common.loading') : t('auth.create_restaurant')}
             </button>

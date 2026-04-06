@@ -13,10 +13,10 @@ const ALERT_ICONS: Record<AlertType, typeof Bell> = {
   waste_spike: AlertTriangle,
 }
 const ALERT_COLORS: Record<AlertType, string> = {
-  price_spike: 'text-orange-400',
-  margin_erosion: 'text-red-400',
-  low_stock: 'text-yellow-400',
-  waste_spike: 'text-purple-400',
+  price_spike: 'text-warn',
+  margin_erosion: 'text-danger',
+  low_stock: 'text-warn',
+  waste_spike: 'text-info',
 }
 
 export default function AlertsPage() {
@@ -47,40 +47,40 @@ export default function AlertsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">{t('alerts.title')}</h1>
+        <h1 className="text-2xl font-bold text-sand-900" style={{ fontFamily: 'var(--font-display)' }}>{t('alerts.title')}</h1>
         <div className="flex items-center gap-3">
-          <div className="flex bg-slate-900 rounded-xl border border-slate-800 p-1">
-            <button onClick={() => setFilter('unread')} className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${filter === 'unread' ? 'bg-brand-600 text-white' : 'text-slate-400 hover:text-white'}`}>
+          <div className="flex bg-sand-100 rounded-xl p-1">
+            <button onClick={() => setFilter('unread')} className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${filter === 'unread' ? 'bg-brand-500 text-white' : 'text-sand-600 hover:text-sand-900'}`}>
               {t('alerts.unread')}
             </button>
-            <button onClick={() => setFilter('all')} className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${filter === 'all' ? 'bg-brand-600 text-white' : 'text-slate-400 hover:text-white'}`}>
+            <button onClick={() => setFilter('all')} className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${filter === 'all' ? 'bg-brand-500 text-white' : 'text-sand-600 hover:text-sand-900'}`}>
               {t('alerts.all')}
             </button>
           </div>
           {filter === 'unread' && alerts.length > 0 && (
-            <button onClick={markAllRead} className="text-sm text-brand-400 hover:text-brand-300">{t('alerts.mark_all_read')}</button>
+            <button onClick={markAllRead} className="text-sm text-brand-500 hover:text-brand-600">{t('alerts.mark_all_read')}</button>
           )}
         </div>
       </div>
 
       {alerts.length === 0 ? (
         <div className="text-center py-16">
-          <Bell className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-          <p className="text-slate-400">{filter === 'unread' ? t('alerts.no_unread') : t('alerts.empty')}</p>
+          <Bell className="w-12 h-12 text-sand-300 mx-auto mb-3" />
+          <p className="text-sand-500">{filter === 'unread' ? t('alerts.no_unread') : t('alerts.empty')}</p>
         </div>
       ) : (
         <div className="space-y-2">
           {alerts.map(alert => {
             const Icon = ALERT_ICONS[alert.type] || Bell
-            const color = ALERT_COLORS[alert.type] || 'text-slate-400'
+            const color = ALERT_COLORS[alert.type] || 'text-sand-500'
             return (
-              <div key={alert.id} className={`flex items-start gap-4 p-4 rounded-2xl border transition-colors ${alert.read ? 'bg-slate-900/50 border-slate-800/50' : 'bg-slate-900 border-slate-700'}`}>
+              <div key={alert.id} className={`flex items-start gap-4 p-4 rounded-xl border transition-colors ${alert.read ? 'bg-sand-50 border-sand-200/50' : 'bg-white border-sand-200'}`}>
                 <div className={`mt-0.5 ${color}`}><Icon className="w-5 h-5" /></div>
                 <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-medium ${alert.read ? 'text-slate-400' : 'text-white'}`}>{alert.message}</p>
-                  <p className="text-xs text-slate-500 mt-1">
+                  <p className={`text-sm font-medium ${alert.read ? 'text-sand-500' : 'text-sand-900'}`}>{alert.message}</p>
+                  <p className="text-xs text-sand-400 mt-1">
                     {t(`alerts.types.${alert.type}`)}
                     {alert.metadata && typeof alert.metadata === 'object' && 'amount' in alert.metadata && (
                       <> &middot; {formatCurrency(alert.metadata.amount as number)}</>
@@ -89,7 +89,7 @@ export default function AlertsPage() {
                   </p>
                 </div>
                 {!alert.read && (
-                  <button onClick={() => markRead(alert.id)} className="text-slate-500 hover:text-brand-400 transition-colors" title="Mark read">
+                  <button onClick={() => markRead(alert.id)} className="text-sand-400 hover:text-brand-500 transition-colors" title="Mark read">
                     <Check className="w-4 h-4" />
                   </button>
                 )}

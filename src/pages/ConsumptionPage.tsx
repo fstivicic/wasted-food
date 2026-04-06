@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/contexts/AuthContext'
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
-import { TrendingUp, Plus, X } from 'lucide-react'
+import { TrendingUp, Plus } from 'lucide-react'
 import { formatCurrency, formatNumber } from '@/lib/utils'
 import type { Ingredient, ConsumptionPeriod } from '@/types/database'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
@@ -94,52 +94,48 @@ export default function ConsumptionPage() {
   }).slice(0, 10) : []
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">{t('consumption.title')}</h1>
-        <button onClick={() => setShowNewPeriod(true)} className="flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-xl transition-colors">
+        <h1 className="text-2xl font-bold text-sand-900" style={{ fontFamily: 'var(--font-display)' }}>{t('consumption.title')}</h1>
+        <button onClick={() => setShowNewPeriod(!showNewPeriod)} className="flex items-center gap-2 px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium rounded-xl transition-colors">
           <Plus className="w-4 h-4" /> {t('consumption.generate')}
         </button>
       </div>
 
-      {/* New Period Form */}
+      {/* New Period Form (inline, not modal) */}
       {showNewPeriod && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-sm">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-white">{t('consumption.new_period')}</h2>
-              <button onClick={() => setShowNewPeriod(false)}><X className="w-5 h-5 text-slate-400" /></button>
+        <form onSubmit={generatePeriod} className="bg-white border border-sand-200 rounded-xl p-4 animate-in">
+          <h2 className="text-sm font-semibold text-sand-900 mb-3">{t('consumption.new_period')}</h2>
+          <div className="flex items-end gap-3 flex-wrap">
+            <div>
+              <label className="block text-xs text-sand-500 mb-1">{t('consumption.start')}</label>
+              <input type="date" required value={periodStart} onChange={e => setPeriodStart(e.target.value)} className="px-3 py-2 bg-sand-50 border border-sand-300 rounded-lg text-sand-900 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
             </div>
-            <form onSubmit={generatePeriod} className="space-y-4">
-              <div>
-                <label className="block text-sm text-slate-400 mb-1">{t('consumption.start')}</label>
-                <input type="date" required value={periodStart} onChange={e => setPeriodStart(e.target.value)} className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-brand-500" />
-              </div>
-              <div>
-                <label className="block text-sm text-slate-400 mb-1">{t('consumption.end')}</label>
-                <input type="date" required value={periodEnd} onChange={e => setPeriodEnd(e.target.value)} className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-brand-500" />
-              </div>
-              <button type="submit" disabled={generating} className="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-xl transition-colors disabled:opacity-50">
-                {generating ? 'Generating...' : t('consumption.generate')}
-              </button>
-            </form>
+            <div>
+              <label className="block text-xs text-sand-500 mb-1">{t('consumption.end')}</label>
+              <input type="date" required value={periodEnd} onChange={e => setPeriodEnd(e.target.value)} className="px-3 py-2 bg-sand-50 border border-sand-300 rounded-lg text-sand-900 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+            </div>
+            <button type="submit" disabled={generating} className="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50">
+              {generating ? 'Generating...' : t('consumption.generate')}
+            </button>
+            <button type="button" onClick={() => setShowNewPeriod(false)} className="px-4 py-2 bg-sand-100 hover:bg-sand-200 text-sand-700 text-sm font-medium rounded-lg transition-colors">{t('common.cancel')}</button>
           </div>
-        </div>
+        </form>
       )}
 
       {/* Chart for latest period */}
       {chartData.length > 0 && (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-          <h3 className="text-sm font-medium text-slate-400 mb-4">
+        <div className="bg-white border border-sand-200 rounded-xl p-5">
+          <h3 className="text-sm font-medium text-sand-500 mb-4">
             {latestPeriod.period_start} — {latestPeriod.period_end}: Top Ingredients
           </h3>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={chartData}>
-              <XAxis dataKey="name" stroke="#64748b" fontSize={11} angle={-30} textAnchor="end" height={60} />
-              <YAxis stroke="#64748b" fontSize={12} />
-              <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '12px' }} />
-              <Bar dataKey="purchased" fill="#22c55e" name="Purchased" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="wasted" fill="#ef4444" name="Wasted" radius={[4, 4, 0, 0]} />
+              <XAxis dataKey="name" stroke="#94918b" fontSize={11} angle={-30} textAnchor="end" height={60} />
+              <YAxis stroke="#94918b" fontSize={12} />
+              <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #e8e6e1', borderRadius: '8px' }} />
+              <Bar dataKey="purchased" fill="#5b8c5a" name="Purchased" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="wasted" fill="#c0483b" name="Wasted" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -147,12 +143,12 @@ export default function ConsumptionPage() {
 
       {/* Suggested Order */}
       {latestPeriod && (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-          <h3 className="text-sm font-medium text-slate-400 mb-3">{t('consumption.suggested_order')}</h3>
+        <div className="bg-white border border-sand-200 rounded-xl p-5">
+          <h3 className="text-sm font-medium text-sand-500 mb-3">{t('consumption.suggested_order')}</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-800 text-slate-400">
+                <tr className="border-b border-sand-200 text-sand-500">
                   <th className="text-left py-2 px-3 font-medium">Ingredient</th>
                   <th className="text-right py-2 px-3 font-medium">Purchased</th>
                   <th className="text-right py-2 px-3 font-medium">Wasted</th>
@@ -165,12 +161,12 @@ export default function ConsumptionPage() {
                   const ing = ingredients.find(i => i.id === id)
                   const cd = (latestPeriod.consumption_data as Record<string, { purchased: number; wasted: number; cost: number }>)[id]
                   return (
-                    <tr key={id} className="border-b border-slate-800/50">
-                      <td className="py-2 px-3 text-white">{ing?.name || id.slice(0, 8)}</td>
-                      <td className="py-2 px-3 text-right text-slate-300">{formatNumber(cd?.purchased || 0)} {ing?.unit}</td>
-                      <td className="py-2 px-3 text-right text-red-400">{formatNumber(cd?.wasted || 0)}</td>
-                      <td className="py-2 px-3 text-right text-brand-400 font-medium">{formatNumber(qty)} {ing?.unit}</td>
-                      <td className="py-2 px-3 text-right text-slate-300">{formatCurrency(qty * (ing?.avg_cost || 0))}</td>
+                    <tr key={id} className="border-b border-sand-100">
+                      <td className="py-2 px-3 text-sand-900">{ing?.name || id.slice(0, 8)}</td>
+                      <td className="py-2 px-3 text-right text-sand-600 tabular-nums">{formatNumber(cd?.purchased || 0)} {ing?.unit}</td>
+                      <td className="py-2 px-3 text-right text-danger tabular-nums">{formatNumber(cd?.wasted || 0)}</td>
+                      <td className="py-2 px-3 text-right text-brand-500 font-medium tabular-nums">{formatNumber(qty)} {ing?.unit}</td>
+                      <td className="py-2 px-3 text-right text-sand-600 tabular-nums">{formatCurrency(qty * (ing?.avg_cost || 0))}</td>
                     </tr>
                   )
                 })}
@@ -183,17 +179,17 @@ export default function ConsumptionPage() {
       {/* Previous periods list */}
       {periods.length === 0 ? (
         <div className="text-center py-12">
-          <TrendingUp className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-          <p className="text-slate-400">{t('consumption.empty')}</p>
+          <TrendingUp className="w-12 h-12 text-sand-300 mx-auto mb-3" />
+          <p className="text-sand-500">{t('consumption.empty')}</p>
         </div>
       ) : periods.length > 1 && (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-          <h3 className="text-sm font-medium text-slate-400 mb-3">Previous Periods</h3>
+        <div className="bg-white border border-sand-200 rounded-xl p-5">
+          <h3 className="text-sm font-medium text-sand-500 mb-3">Previous Periods</h3>
           <div className="space-y-2">
             {periods.slice(1).map(p => (
-              <div key={p.id} className="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl">
-                <span className="text-sm text-slate-300">{p.period_start} — {p.period_end}</span>
-                <span className="text-xs text-slate-500">{Object.keys(p.consumption_data || {}).length} ingredients</span>
+              <div key={p.id} className="flex items-center justify-between p-3 bg-sand-50 rounded-lg">
+                <span className="text-sm text-sand-700">{p.period_start} — {p.period_end}</span>
+                <span className="text-xs text-sand-500">{Object.keys(p.consumption_data || {}).length} ingredients</span>
               </div>
             ))}
           </div>

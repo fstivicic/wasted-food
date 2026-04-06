@@ -58,61 +58,64 @@ export default function SuppliersPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">{t('suppliers.title')}</h1>
-        <button onClick={() => openForm()} className="flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-xl transition-colors">
+        <h1 className="text-2xl font-bold text-sand-900" style={{ fontFamily: 'var(--font-display)' }}>{t('suppliers.title')}</h1>
+        <button onClick={() => openForm()} className="flex items-center gap-2 px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium rounded-xl transition-colors">
           <Plus className="w-4 h-4" />
           {t('suppliers.add')}
         </button>
       </div>
 
+      {/* Inline form (replaces modal) */}
+      {showForm && (
+        <form onSubmit={handleSubmit} className="bg-white border border-sand-200 rounded-xl p-4 animate-in">
+          <h2 className="text-sm font-semibold text-sand-900 mb-3">{editing ? t('suppliers.edit') : t('suppliers.add')}</h2>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div>
+              <label className="block text-xs text-sand-500 mb-1">{t('suppliers.name')}</label>
+              <input type="text" required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full px-3 py-2 bg-sand-50 border border-sand-300 rounded-lg text-sand-900 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+            </div>
+            <div>
+              <label className="block text-xs text-sand-500 mb-1">{t('suppliers.email')}</label>
+              <input type="email" value={form.contact_email} onChange={e => setForm({ ...form, contact_email: e.target.value })} className="w-full px-3 py-2 bg-sand-50 border border-sand-300 rounded-lg text-sand-900 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+            </div>
+            <div>
+              <label className="block text-xs text-sand-500 mb-1">{t('suppliers.phone')}</label>
+              <input type="tel" value={form.contact_phone} onChange={e => setForm({ ...form, contact_phone: e.target.value })} className="w-full px-3 py-2 bg-sand-50 border border-sand-300 rounded-lg text-sand-900 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+            </div>
+          </div>
+          <div className="flex gap-3 mt-3">
+            <button type="submit" className="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium rounded-lg transition-colors">{t('common.save')}</button>
+            <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 bg-sand-100 hover:bg-sand-200 text-sand-700 text-sm font-medium rounded-lg transition-colors">{t('common.cancel')}</button>
+          </div>
+        </form>
+      )}
+
       {loading ? (
-        <p className="text-slate-400 text-center py-8">{t('common.loading')}</p>
+        <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="skeleton h-16 rounded-xl" />)}</div>
       ) : suppliers.length === 0 ? (
         <div className="text-center py-12">
-          <Truck className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-          <p className="text-slate-400">{t('suppliers.no_suppliers')}</p>
+          <Truck className="w-12 h-12 text-sand-300 mx-auto mb-3" />
+          <p className="text-sand-500">{t('suppliers.no_suppliers')}</p>
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="space-y-2">
           {suppliers.map(s => (
-            <div key={s.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
-              <h3 className="text-white font-medium mb-2">{s.name}</h3>
-              {s.contact_email && <p className="text-sm text-slate-400">{s.contact_email}</p>}
-              {s.contact_phone && <p className="text-sm text-slate-400">{s.contact_phone}</p>}
-              <div className="flex gap-2 mt-3">
-                <button onClick={() => openForm(s)} className="text-xs text-brand-400 hover:text-brand-300">{t('common.edit')}</button>
-                <button onClick={() => handleDelete(s.id)} className="text-xs text-red-400 hover:text-red-300">{t('common.delete')}</button>
+            <div key={s.id} className="flex items-center justify-between bg-white border border-sand-200 rounded-xl px-4 py-3">
+              <div>
+                <h3 className="text-sand-900 font-medium text-sm">{s.name}</h3>
+                <div className="flex gap-3 text-xs text-sand-500 mt-0.5">
+                  {s.contact_email && <span>{s.contact_email}</span>}
+                  {s.contact_phone && <span>{s.contact_phone}</span>}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => openForm(s)} className="text-xs text-brand-500 hover:text-brand-600 font-medium">{t('common.edit')}</button>
+                <button onClick={() => handleDelete(s.id)} className="text-xs text-danger hover:text-danger/80 font-medium">{t('common.delete')}</button>
               </div>
             </div>
           ))}
-        </div>
-      )}
-
-      {showForm && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <h2 className="text-lg font-semibold text-white mb-4">{editing ? t('suppliers.edit') : t('suppliers.add')}</h2>
-            <form onSubmit={handleSubmit} className="space-y-3">
-              <div>
-                <label className="block text-sm text-slate-400 mb-1">{t('suppliers.name')}</label>
-                <input type="text" required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-brand-500" />
-              </div>
-              <div>
-                <label className="block text-sm text-slate-400 mb-1">{t('suppliers.email')}</label>
-                <input type="email" value={form.contact_email} onChange={e => setForm({ ...form, contact_email: e.target.value })} className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-brand-500" />
-              </div>
-              <div>
-                <label className="block text-sm text-slate-400 mb-1">{t('suppliers.phone')}</label>
-                <input type="tel" value={form.contact_phone} onChange={e => setForm({ ...form, contact_phone: e.target.value })} className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-brand-500" />
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button type="submit" className="flex-1 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-xl transition-colors">{t('common.save')}</button>
-                <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium rounded-xl transition-colors">{t('common.cancel')}</button>
-              </div>
-            </form>
-          </div>
         </div>
       )}
     </div>
