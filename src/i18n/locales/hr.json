@@ -1,0 +1,163 @@
+{
+  "app_name": "WastedFood",
+  "nav": {
+    "dashboard": "Nadzorna ploča",
+    "scan": "Skeniraj račun",
+    "inventory": "Inventar",
+    "waste": "Otpis",
+    "dishes": "Jela",
+    "alerts": "Upozorenja",
+    "consumption": "Potrošnja",
+    "suppliers": "Dobavljači",
+    "settings": "Postavke"
+  },
+  "auth": {
+    "login": "Prijava",
+    "register": "Registracija",
+    "email": "Email",
+    "password": "Lozinka",
+    "magic_link": "Pošalji magic link",
+    "or": "ili",
+    "no_account": "Nemate račun?",
+    "has_account": "Već imate račun?",
+    "logout": "Odjava",
+    "create_restaurant": "Kreiraj restoran",
+    "restaurant_name": "Naziv restorana"
+  },
+  "dashboard": {
+    "title": "Nadzorna ploča",
+    "inventory_health": "Stanje inventara",
+    "waste_this_week": "Otpis ovaj tjedan",
+    "top_dishes": "Top jela po marži",
+    "recent_alerts": "Nedavna upozorenja",
+    "quick_actions": "Brze radnje",
+    "items_ok": "OK",
+    "items_low": "Nisko",
+    "items_critical": "Kritično"
+  },
+  "inventory": {
+    "title": "Inventar",
+    "add": "Dodaj namirnicu",
+    "edit": "Uredi namirnicu",
+    "name": "Naziv",
+    "category": "Kategorija",
+    "unit": "Jedinica",
+    "stock": "Zaliha",
+    "par_level": "Min. razina",
+    "avg_cost": "Prosj. cijena",
+    "last_cost": "Zadnja cijena",
+    "search": "Pretraži namirnice...",
+    "no_items": "Nema namirnica. Dodajte prvu ili skenirajte račun."
+  },
+  "scan": {
+    "title": "Skeniraj račun",
+    "capture": "Slikaj",
+    "upload": "Učitaj sliku",
+    "processing": "Obrada...",
+    "ocr_running": "Čitanje teksta sa slike...",
+    "ai_running": "AI strukturira podatke...",
+    "review": "Pregledaj izvučene stavke",
+    "approve": "Odobri i ažuriraj inventar",
+    "reject": "Odbaci",
+    "product": "Proizvod",
+    "quantity": "Kol.",
+    "unit_price": "Jed. cijena",
+    "total": "Ukupno",
+    "match_ingredient": "Poveži s namirnicom",
+    "create_new": "Kreiraj novu",
+    "supplier": "Dobavljač",
+    "invoice_date": "Datum računa",
+    "confidence": "AI pouzdanost"
+  },
+  "waste": {
+    "title": "Otpis",
+    "log_waste": "Zapiši otpis",
+    "ingredient": "Namirnica",
+    "quantity": "Količina",
+    "reason": "Razlog",
+    "notes": "Napomena (opcionalno)",
+    "submit": "Zapiši otpis",
+    "history": "Povijest otpisa",
+    "trends": "Trendovi otpisa",
+    "reasons": {
+      "spoilage": "Pokvareno",
+      "kitchen_error": "Greška u kuhinji",
+      "overproduction": "Prekomjerna proizvodnja",
+      "damage": "Oštećeno",
+      "expired": "Isteklo",
+      "other": "Ostalo"
+    },
+    "no_logs": "Nema unosa otpisa. Počnite zapisivati za praćenje trendova."
+  },
+  "dishes": {
+    "title": "Jela i kalkulacija",
+    "add": "Dodaj jelo",
+    "edit": "Uredi jelo",
+    "name": "Naziv jela",
+    "menu_price": "Cijena na meniju",
+    "category": "Kategorija",
+    "ingredients": "Sastojci recepta",
+    "add_ingredient": "Dodaj sastojak",
+    "qty_per_serving": "Kol. / porcija",
+    "cost": "Trošak",
+    "margin": "Marža",
+    "no_dishes": "Nema jela. Dodajte prvo jelo za pregled troškova."
+  },
+  "alerts": {
+    "title": "Upozorenja",
+    "mark_read": "Označi pročitano",
+    "mark_all_read": "Označi sve pročitano",
+    "no_alerts": "Nema upozorenja. Sve je u redu!",
+    "unread": "Nepročitano",
+    "all": "Sve",
+    "types": {
+      "price_spike": "Skok cijene",
+      "margin_erosion": "Upozorenje o marži",
+      "low_stock": "Niska zaliha",
+      "waste_spike": "Skok otpisa"
+    }
+  },
+  "consumption": {
+    "title": "Potrošnja i narudžbe",
+    "monthly_usage": "Mjesečna potrošnja",
+    "suggested_orders": "Predložene narudžbe",
+    "generate_order": "Generiraj listu narudžbe",
+    "avg_daily": "Prosj. dnevno",
+    "total_purchased": "Nabavljeno",
+    "total_wasted": "Otpisano",
+    "total_consumed": "Potrošeno",
+    "suggested_qty": "Predložena kol.",
+    "no_data": "Nedovoljno podataka. Počnite skenirati račune i zapisivati otpis."
+  },
+  "suppliers": {
+    "title": "Dobavljači",
+    "add": "Dodaj dobavljača",
+    "edit": "Uredi dobavljača",
+    "name": "Naziv",
+    "email": "Email",
+    "phone": "Telefon",
+    "no_suppliers": "Nema dobavljača. Dodajte prvog."
+  },
+  "settings": {
+    "title": "Postavke",
+    "restaurant_info": "Podaci o restoranu",
+    "team": "Članovi tima",
+    "invite": "Pozovi člana",
+    "language": "Jezik",
+    "currency": "Valuta",
+    "role": "Uloga",
+    "remove": "Ukloni"
+  },
+  "common": {
+    "save": "Spremi",
+    "cancel": "Odustani",
+    "delete": "Obriši",
+    "edit": "Uredi",
+    "loading": "Učitavanje...",
+    "error": "Nešto je pošlo po krivu",
+    "success": "Uspjeh",
+    "confirm_delete": "Jeste li sigurni da želite obrisati ovo?",
+    "no_results": "Nema rezultata",
+    "back": "Natrag"
+  }
+}
